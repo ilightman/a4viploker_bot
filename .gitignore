@@ -215,4 +215,4 @@ cython_debug/
 main.py
 .deta
 .detaignore
-
+.idea
