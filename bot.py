@@ -7,6 +7,7 @@ from aiogram.utils import executor
 
 from filters import UserNotBanned
 from handlers.users.users import register_user_handlers
+from middlewares.ban_mw import BanMiddleware
 from middlewares.throttling_aiogram import ThrottlingMiddleware
 
 # Configure logging
@@ -36,6 +37,7 @@ async def set_default_commands(disp: Dispatcher):
 async def on_startup(disp: Dispatcher):
     await set_default_commands(disp)
     disp.middleware.setup(ThrottlingMiddleware())
+    disp.middleware.setup(BanMiddleware())
 
     logging.warning('Бот запущен и работает')
 

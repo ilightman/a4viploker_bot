@@ -1,5 +1,4 @@
 import re
-
 from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
@@ -29,17 +28,28 @@ class UserStates(StatesGroup):
 
 
 @rate_limit(3, 'start')
+# @is_banned(key=True)
 async def start_command(message: types.Message, state: FSMContext):
-    """Обрабатывает стартовую команду, присылает текст приветствия и две инлайн кнопки"""
+    """Акция кончилась, базовый ответ"""
     await state.finish()
     await add_user_to_second_db(message.from_user)
-    # user_banned = await is_user_banned(message.from_user)
-    # if not user_banned:
-    user_in_base = await is_user_already_in_base(message.from_user)
+    msg = "К сожалению, акция подошла к концу. Впереди вас ждут и другие интересные акции! Оставайтесь на связи!"
+    await message.answer(text=msg)
 
-    inl_kb = await start_message_inl_kb(user_in_base)
-    msg = START_MESSAGE_FOR_USERS_IN_BASE if user_in_base else START_MESSAGE
-    await message.answer(text=msg, reply_markup=inl_kb)
+
+# @rate_limit(3, 'start')
+# # @is_banned(key=True)
+# async def start_command(message: types.Message, state: FSMContext):
+#     """Обрабатывает стартовую команду, присылает текст приветствия и две инлайн кнопки"""
+#     await state.finish()
+#     await add_user_to_second_db(message.from_user)
+#     # user_banned = await is_user_banned(message.from_user)
+#     # if not user_banned:
+#     user_in_base = await is_user_already_in_base(message.from_user)
+#
+#     inl_kb = await start_message_inl_kb(user_in_base)
+#     msg = START_MESSAGE_FOR_USERS_IN_BASE if user_in_base else START_MESSAGE
+#     await message.answer(text=msg, reply_markup=inl_kb)
 
 
 @rate_limit(2)
@@ -161,6 +171,10 @@ async def banned_user_handler(*args, **kwargs):
     return True
 
 
+async def channel_leave_handler(message: types.Message):
+    await message.bot.leave_chat(message.chat.id)
+
+
 def register_user_handlers(dp: Dispatcher):
     dp.register_message_handler(start_command, UserNotBanned(), commands=['start', 'help'], state=['*'])
     dp.register_callback_query_handler(start_choice, UserNotBanned(), start_cb_data.filter())
@@ -174,6 +188,8 @@ def register_user_handlers(dp: Dispatcher):
 
     dp.register_message_handler(enter_address_handler, state=UserStates.enter_address)
     dp.register_callback_query_handler(change_choice, change_record_cb_data.filter(), state=UserStates.confirm)
+
+    dp.register_channel_post_handler(channel_leave_handler, content_types=types.ContentTypes.ANY)
 
     dp.register_message_handler(delete_message, UserNotBanned(), state=['*'])
     dp.register_message_handler(banned_user_handler)

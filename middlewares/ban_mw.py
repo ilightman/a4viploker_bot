@@ -9,7 +9,8 @@ from db_api.db_services import user_is_banned
 
 class BanMiddleware(BaseMiddleware):
 
-    def __init__(self):
+    def __init__(self, key: bool = False):
+        self.key = key
         super(BanMiddleware, self).__init__()
 
     async def cancel_handler(self, message: Union[types.Message, types.CallbackQuery]):
@@ -17,10 +18,12 @@ class BanMiddleware(BaseMiddleware):
         if not handler:
             return
 
-        print(self)
+        key = getattr(handler, 'throttling_key', f'key_{self.key}')
 
         message = message.message if isinstance(message, types.CallbackQuery) else message
-        if await user_is_banned(message.from_user):
+        user_banned = await user_is_banned(message.from_user)
+        if user_banned:
+            await message.delete()
             raise CancelHandler()
 
     async def on_process_message(self, message: types.Message, data: dict):
